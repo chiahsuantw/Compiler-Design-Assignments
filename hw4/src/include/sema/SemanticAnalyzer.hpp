@@ -2,15 +2,22 @@
 #define SEMA_SEMANTIC_ANALYZER_H
 
 #include "sema/ErrorPrinter.hpp"
+#include "sema/SymbolTable.hpp"
 #include "visitor/AstNodeVisitor.hpp"
+
+#include <stack>
 
 class SemanticAnalyzer final : public AstNodeVisitor {
   private:
-    ErrorPrinter m_error_printer{stderr};
-    // TODO: something like symbol manager (manage symbol tables)
-    //       context manager, return type manager
+    enum Context { GLOBAL, FUNCTION, FOR_LOOP, LOCAL };
+    ErrorPrinter error_printer{stderr};
+    SymbolManager symbol_manager;
+    std::stack<Context> context_stack;
+    std::stack<PType *> ret_type_stack;
 
   public:
+    bool has_error{false};
+
     ~SemanticAnalyzer() = default;
     SemanticAnalyzer() = default;
 

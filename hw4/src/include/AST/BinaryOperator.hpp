@@ -8,7 +8,7 @@
 #include <memory>
 
 class BinaryOperatorNode final : public ExpressionNode {
-  private:
+  public:
     Operator m_op;
     std::unique_ptr<ExpressionNode> m_left_operand;
     std::unique_ptr<ExpressionNode> m_right_operand;

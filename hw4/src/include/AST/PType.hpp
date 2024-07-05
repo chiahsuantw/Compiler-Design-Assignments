@@ -19,7 +19,7 @@ class PType {
         kStringType
     };
 
-  private:
+  public:
     PrimitiveTypeEnum m_type;
     std::vector<uint64_t> m_dimensions;
     mutable std::string m_type_string;
@@ -35,6 +35,19 @@ class PType {
 
     PrimitiveTypeEnum getPrimitiveType() const { return m_type; }
     const char *getPTypeCString() const;
+    
+    PType *getStructElementType(const std::size_t nth) const {
+      if (nth > m_dimensions.size())
+        return nullptr;
+      auto *type_ptr = new PType(m_type);
+      std::vector<uint64_t> dims;
+      for (std::size_t i = nth; i < m_dimensions.size(); ++i)
+        dims.emplace_back(m_dimensions[i]);
+      type_ptr->setDimensions(dims);
+      return type_ptr;
+    }
+
+    bool compare(const PType *p_type) const;
 };
 
 #endif

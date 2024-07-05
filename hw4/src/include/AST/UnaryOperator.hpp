@@ -8,7 +8,7 @@
 #include <memory>
 
 class UnaryOperatorNode final : public ExpressionNode {
-  private:
+  public:
     Operator m_op;
     std::unique_ptr<ExpressionNode> m_operand;
 

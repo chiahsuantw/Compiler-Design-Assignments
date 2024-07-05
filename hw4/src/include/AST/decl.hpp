@@ -13,7 +13,7 @@ class DeclNode final : public AstNode {
   public:
     using VarNodes = std::vector<std::unique_ptr<VariableNode>>;
 
-  private:
+  public:
     VarNodes m_var_nodes;
 
   private:

@@ -14,7 +14,7 @@ class ProgramNode final : public AstNode {
     using DeclNodes = std::vector<std::unique_ptr<DeclNode>>;
     using FuncNodes = std::vector<std::unique_ptr<FunctionNode>>;
 
-  private:
+  public:
     std::string m_name;
     std::unique_ptr<PType> m_ret_type;
     DeclNodes m_decl_nodes;

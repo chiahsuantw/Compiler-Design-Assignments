@@ -32,6 +32,7 @@ char current_line[MAX_LINE_LENG];
 
 static uint32_t opt_src = 1;
 static uint32_t opt_tok = 1;
+uint32_t opt_dump = 1;
 static char string_literal[MAX_LINE_LENG];
 static char *current_line_ptr = current_line;
 
@@ -179,7 +180,7 @@ nonzero_float ({nonzero_integer}\.(0|[0-9]*[1-9]))|(0\.([0-9]*[1-9]))
 [ \t]+ { LIST_SOURCE; }
 
     /* Pseudocomment */
-"//&"[ST][+-].* {
+"//&"[STD][+-].* {
     LIST_SOURCE;
     char option = yytext[3];
     switch (option) {
@@ -188,6 +189,9 @@ nonzero_float ({nonzero_integer}\.(0|[0-9]*[1-9]))|(0\.([0-9]*[1-9]))
         break;
     case 'T':
         opt_tok = (yytext[4] == '+') ? 1 : 0;
+        break;
+    case 'D':
+        opt_dump = (yytext[4] == '+') ? 1 : 0;
         break;
     }
 }

@@ -7,7 +7,7 @@
 #include <memory>
 
 class ReadNode final : public AstNode {
-  private:
+  public:
     std::unique_ptr<VariableReferenceNode> m_target;
 
   public:

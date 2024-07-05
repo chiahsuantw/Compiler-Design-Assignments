@@ -13,7 +13,7 @@ class FunctionNode final : public AstNode {
   public:
     using DeclNodes = std::vector<std::unique_ptr<DeclNode>>;
 
-  private:
+  public:
     std::string m_name;
     DeclNodes m_parameters;
     std::unique_ptr<PType> m_ret_type;
@@ -33,6 +33,7 @@ class FunctionNode final : public AstNode {
 
     const char *getNameCString() const { return m_name.c_str(); }
     const char *getPrototypeCString() const;
+    static std::string getParametersTypeString(const DeclNodes &p_parameters);
 
     void accept(AstNodeVisitor &p_visitor) override { p_visitor.visit(*this); }
     void visitChildNodes(AstNodeVisitor &p_visitor) override;

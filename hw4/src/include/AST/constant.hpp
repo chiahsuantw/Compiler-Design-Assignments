@@ -15,7 +15,7 @@ class Constant {
         bool boolean;
     };
 
-  private:
+  public:
     PTypeSharedPtr m_type;
     ConstantValue m_value;
     mutable std::string m_constant_value_string;

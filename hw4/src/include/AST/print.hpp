@@ -8,7 +8,7 @@
 #include <memory>
 
 class PrintNode final : public AstNode {
-  private:
+  public:
     std::unique_ptr<ExpressionNode> m_target;
 
   public:

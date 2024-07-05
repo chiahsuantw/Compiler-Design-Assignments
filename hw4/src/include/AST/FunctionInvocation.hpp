@@ -12,7 +12,7 @@ class FunctionInvocationNode final : public ExpressionNode {
   public:
     using ExprNodes = std::vector<std::unique_ptr<ExpressionNode>>;
 
-  private:
+  public:
     std::string m_name;
     ExprNodes m_args;
 

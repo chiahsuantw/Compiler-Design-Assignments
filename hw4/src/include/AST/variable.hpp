@@ -10,7 +10,7 @@
 #include <string>
 
 class VariableNode final : public AstNode {
-  private:
+  public:
     std::string m_name;
     PTypeSharedPtr m_type;
     std::shared_ptr<ConstantValueNode> m_constant_value_node_ptr;

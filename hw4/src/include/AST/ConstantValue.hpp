@@ -9,7 +9,7 @@
 #include <memory>
 
 class ConstantValueNode final : public ExpressionNode {
-  private:
+  public:
     std::unique_ptr<Constant> m_constant_ptr;
 
   public:

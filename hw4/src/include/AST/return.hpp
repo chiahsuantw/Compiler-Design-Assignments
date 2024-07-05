@@ -8,7 +8,7 @@
 #include <memory>
 
 class ReturnNode final : public AstNode {
-  private:
+  public:
     std::unique_ptr<ExpressionNode> m_ret_val;
 
   public:

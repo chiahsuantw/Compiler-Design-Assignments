@@ -3,8 +3,7 @@
 
 #include <algorithm>
 
-static std::string
-getParametersTypeString(const FunctionNode::DeclNodes &p_parameters) {
+std::string FunctionNode::getParametersTypeString(const FunctionNode::DeclNodes &p_parameters) {
     std::string type_string;
 
     for (const auto &parameter : p_parameters) {

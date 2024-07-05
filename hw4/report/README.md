@@ -1,23 +1,29 @@
 # hw4 report
 
-|||
+|Field|Value|
 |-:|:-|
-|Name|yourname|
-|ID|your student id|
+|Name|林嘉軒|
+|ID|312551014|
 
 ## How much time did you spend on this project
 
-> e.g. 2 hours.
+1 week.
 
 ## Project overview
 
-> Please describe the structure of your code and the ideas behind your implementation in an organized way.
-> The point is to show us how you deal with the problems. It is not necessary to write a lot of words or paste all of your code here.
+This project is about extending the parser from the previous assignments to perform semantic analysis for a given program written in the P language. The main steps involved are:
+
+1. Add the `has_error` flag
+2. Add the inferred type for the `ExpressionNode`
+3. Add the `D` pseudocomment for the dump symbol table option
+4. Build the `SymbolManager` and related classes, e.g., `SymbolEntry`, `SymbolTable`
+5. Make sure the parsing flow is correct by passing the first testcase
+6. Add semantic analysis functions for the language constructs
 
 ## What is the hardest you think in this project
 
-> Not required, but bonus point may be given.
+Semantic analysis in binary operations.
 
 ## Feedback to T.A.s
 
-> Not required, but bonus point may be given.
+None.

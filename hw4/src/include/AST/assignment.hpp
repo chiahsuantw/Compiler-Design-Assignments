@@ -8,7 +8,7 @@
 #include <memory>
 
 class AssignmentNode final : public AstNode {
-  private:
+  public:
     std::unique_ptr<VariableReferenceNode> m_lvalue;
     std::unique_ptr<ExpressionNode> m_expr;
 

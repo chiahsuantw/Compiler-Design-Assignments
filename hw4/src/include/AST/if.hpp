@@ -8,7 +8,7 @@
 #include <memory>
 
 class IfNode final : public AstNode {
-  private:
+  public:
     std::unique_ptr<ExpressionNode> m_condition;
     std::unique_ptr<CompoundStatementNode> m_body;
     std::unique_ptr<CompoundStatementNode> m_else_body;

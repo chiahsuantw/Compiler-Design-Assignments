@@ -8,7 +8,7 @@
 #include "AST/CompoundStatement.hpp"
 
 class ForNode final : public AstNode {
-  private:
+  public:
     std::unique_ptr<DeclNode> m_loop_var_decl;
     std::unique_ptr<AssignmentNode> m_init_stmt;
     std::unique_ptr<ExpressionNode> m_end_condition;
