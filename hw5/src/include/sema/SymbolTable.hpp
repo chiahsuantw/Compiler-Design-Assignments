@@ -1,15 +1,15 @@
 #ifndef SEMA_SYMBOL_TABLE_H
 #define SEMA_SYMBOL_TABLE_H
 
-#include "AST/constant.hpp"
-#include "AST/PType.hpp"
-#include "AST/function.hpp"
-
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
+
+#include "AST/PType.hpp"
+#include "AST/constant.hpp"
+#include "AST/function.hpp"
 
 /*
  * Conform to C++ Core Guidelines C.182
@@ -55,21 +55,31 @@ class SymbolEntry {
     size_t m_level;
     const PType *m_p_type;
     Attribute m_attribute;
+    int m_offset;
 
   public:
     ~SymbolEntry() = default;
 
     SymbolEntry(const std::string &p_name, const KindEnum p_kind,
                 const size_t p_level, const PType *const p_p_type,
-                const Constant *const p_constant)
-        : m_name(p_name), m_kind(p_kind), m_level(p_level), m_p_type(p_p_type),
-          m_attribute(p_constant) {}
+                const Constant *const p_constant, const int p_offset)
+        : m_name(p_name),
+          m_kind(p_kind),
+          m_level(p_level),
+          m_p_type(p_p_type),
+          m_attribute(p_constant),
+          m_offset(p_offset) {}
 
     SymbolEntry(const std::string &p_name, const KindEnum p_kind,
                 const size_t p_level, const PType *const p_p_type,
-                const FunctionNode::DeclNodes *const p_parameters)
-        : m_name(p_name), m_kind(p_kind), m_level(p_level), m_p_type(p_p_type),
-          m_attribute(p_parameters) {}
+                const FunctionNode::DeclNodes *const p_parameters,
+                const int p_offset)
+        : m_name(p_name),
+          m_kind(p_kind),
+          m_level(p_level),
+          m_p_type(p_p_type),
+          m_attribute(p_parameters),
+          m_offset(p_offset) {}
 
     const std::string &getName() const { return m_name; }
     const char *getNameCString() const { return m_name.c_str(); }
@@ -81,6 +91,8 @@ class SymbolEntry {
     const PType *getTypePtr() const { return m_p_type; }
 
     const Attribute &getAttribute() const { return m_attribute; }
+
+    const int getOffset() const { return m_offset; }
 };
 
 class SymbolTable {
@@ -95,14 +107,20 @@ class SymbolTable {
     const SymbolEntry *lookup(const std::string &p_name) const;
 
     SymbolEntry *addSymbol(const std::string &p_name,
-                           const SymbolEntry::KindEnum p_kind, const size_t p_level,
-                           const PType *const p_p_type,
-                           const Constant *const p_constant);
+                           const SymbolEntry::KindEnum p_kind,
+                           const size_t p_level, const PType *const p_p_type,
+                           const Constant *const p_constant,
+                           const int p_offset);
     SymbolEntry *addSymbol(const std::string &p_name,
-                           const SymbolEntry::KindEnum p_kind, const size_t p_level,
-                           const PType *const p_p_type,
-                           const FunctionNode::DeclNodes *const p_parameters);
+                           const SymbolEntry::KindEnum p_kind,
+                           const size_t p_level, const PType *const p_p_type,
+                           const FunctionNode::DeclNodes *const p_parameters,
+                           const int p_offset);
     void dump() const;
+
+    const std::vector<std::unique_ptr<SymbolEntry>> &getEntries() const {
+        return m_entries;
+    }
 };
 
 class SymbolManager {
@@ -111,6 +129,8 @@ class SymbolManager {
 
   private:
     std::vector<Table> m_tables;
+    int m_global_offset = -12;
+    int m_label_index = 1;
 
     const bool m_opt_dmp;
 
@@ -145,6 +165,12 @@ class SymbolManager {
 
     /// @note Overflows if no scope is pushed.
     size_t getCurrentLevel() const;
+
+    int getGlobalOffset() const { return m_global_offset; }
+
+    void setGlobalOffset(int p_offset) { m_global_offset = p_offset; }
+
+    int getNewLabel() { return m_label_index++; }
 };
 
 #endif

@@ -1,8 +1,4 @@
-#include "AST/PType.hpp"
-#include "sema/Error.hpp"
-#include "sema/ErrorPrinter.hpp"
 #include "sema/SemanticAnalyzer.hpp"
-#include "visitor/AstNodeInclude.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -10,6 +6,11 @@
 #include <set>
 #include <stack>
 #include <vector>
+
+#include "AST/PType.hpp"
+#include "sema/Error.hpp"
+#include "sema/ErrorPrinter.hpp"
+#include "visitor/AstNodeInclude.hpp"
 
 //
 // There is only one semantic analysis that should be performed in pre-order,
@@ -53,8 +54,8 @@ void SemanticAnalyzer::visit(DeclNode &p_decl) {
     p_decl.visitChildNodes(*this);
 }
 
-SymbolEntry::KindEnum
-SemanticAnalyzer::determineVarKind(const VariableNode &p_variable) const {
+SymbolEntry::KindEnum SemanticAnalyzer::determineVarKind(
+    const VariableNode &p_variable) const {
     if (m_context_stack.top() == SemanticContext::kForLoop) {
         return SymbolEntry::KindEnum::kLoopVarKind;
     }
@@ -105,12 +106,12 @@ void SemanticAnalyzer::visit(VariableNode &p_variable) {
     p_variable.visitChildNodes(*this);
 
     // The size of an array should be positive. Notice that size error doesn't
-    // stop the array from being added to the symbol table; however, the symbol is
-    // ill-formed.
+    // stop the array from being added to the symbol table; however, the symbol
+    // is ill-formed.
     if (entry && hasNonPositiveDimension(p_variable.getTypePtr())) {
         m_error_entry_set.insert(entry);
-        printError(NonPositiveArrayDimensionError(
-            p_variable.getLocation(), p_variable.getNameCString()));
+        printError(NonPositiveArrayDimensionError(p_variable.getLocation(),
+                                                  p_variable.getNameCString()));
     }
 }
 
@@ -131,6 +132,8 @@ void SemanticAnalyzer::visit(FunctionNode &p_function) {
         assert(entry);
     }
 
+    int saved_offset = m_symbol_manager.getGlobalOffset();
+    m_symbol_manager.setGlobalOffset(-12);
     m_symbol_manager.pushScope();
     m_context_stack.push(SemanticContext::kFunction);
     m_returned_type_stack.push(p_function.getTypePtr());
@@ -144,6 +147,7 @@ void SemanticAnalyzer::visit(FunctionNode &p_function) {
     p_function.visitBodyChildNodes(*this);
     m_context_stack.pop();
 
+    m_symbol_manager.setGlobalOffset(saved_offset);
     m_returned_type_stack.pop();
     m_context_stack.pop();
     m_symbol_table_of_scoping_nodes[&p_function] = m_symbol_manager.popScope();
@@ -160,7 +164,6 @@ void SemanticAnalyzer::visit(CompoundStatementNode &p_compound_statement) {
         m_symbol_manager.popScope();
 }
 
-
 void SemanticAnalyzer::visit(PrintNode &p_print) {
     p_print.visitChildNodes(*this);
 
@@ -168,8 +171,8 @@ void SemanticAnalyzer::visit(PrintNode &p_print) {
         return;
     }
     if (!p_print.getTarget().getInferredType()->isScalar()) {
-        printError(PrintOutNonScalarTypeError(
-            p_print.getTarget().getLocation()));
+        printError(
+            PrintOutNonScalarTypeError(p_print.getTarget().getLocation()));
     }
 }
 
@@ -179,43 +182,43 @@ bool validateBinaryOperands(const BinaryOperatorNode &p_bin_op) {
     const auto *right_type = p_bin_op.getRightOperand().getInferredType();
 
     switch (p_bin_op.getOp()) {
-    case Operator::kPlusOp:
-        if (left_type->isString() && right_type->isString()) {
-            return true;
-        }
-        [[fallthrough]];
-    case Operator::kMinusOp:
-    case Operator::kMultiplyOp:
-    case Operator::kDivideOp:
-        if ((left_type->isInteger() || left_type->isReal()) &&
-            (right_type->isInteger() || right_type->isReal())) {
-            return true;
-        }
-        break;
-    case Operator::kModOp:
-        if (left_type->isInteger() && right_type->isInteger()) {
-            return true;
-        }
-        break;
-    case Operator::kAndOp:
-    case Operator::kOrOp:
-        if (left_type->isBool() && right_type->isBool()) {
-            return true;
-        }
-        break;
-    case Operator::kLessOp:
-    case Operator::kLessOrEqualOp:
-    case Operator::kEqualOp:
-    case Operator::kGreaterOp:
-    case Operator::kGreaterOrEqualOp:
-    case Operator::kNotEqualOp:
-        if ((left_type->isInteger() || left_type->isReal()) &&
-            (right_type->isInteger() || right_type->isReal())) {
-            return true;
-        }
-        break;
-    default:
-        assert(false && "unknown binary op or unary op");
+        case Operator::kPlusOp:
+            if (left_type->isString() && right_type->isString()) {
+                return true;
+            }
+            [[fallthrough]];
+        case Operator::kMinusOp:
+        case Operator::kMultiplyOp:
+        case Operator::kDivideOp:
+            if ((left_type->isInteger() || left_type->isReal()) &&
+                (right_type->isInteger() || right_type->isReal())) {
+                return true;
+            }
+            break;
+        case Operator::kModOp:
+            if (left_type->isInteger() && right_type->isInteger()) {
+                return true;
+            }
+            break;
+        case Operator::kAndOp:
+        case Operator::kOrOp:
+            if (left_type->isBool() && right_type->isBool()) {
+                return true;
+            }
+            break;
+        case Operator::kLessOp:
+        case Operator::kLessOrEqualOp:
+        case Operator::kEqualOp:
+        case Operator::kGreaterOp:
+        case Operator::kGreaterOrEqualOp:
+        case Operator::kNotEqualOp:
+            if ((left_type->isInteger() || left_type->isReal()) &&
+                (right_type->isInteger() || right_type->isReal())) {
+                return true;
+            }
+            break;
+        default:
+            assert(false && "unknown binary op or unary op");
     }
 
     return false;
@@ -226,44 +229,44 @@ void setBinaryOpInferredType(BinaryOperatorNode &p_bin_op) {
     const auto *right_type = p_bin_op.getRightOperand().getInferredType();
 
     switch (p_bin_op.getOp()) {
-    case Operator::kPlusOp:
-        if (left_type->isString() && right_type->isString()) {
+        case Operator::kPlusOp:
+            if (left_type->isString() && right_type->isString()) {
+                p_bin_op.setInferredType(
+                    new PType(PType::PrimitiveTypeEnum::kStringType));
+                return;
+            }
+            [[fallthrough]];
+        case Operator::kMinusOp:
+        case Operator::kMultiplyOp:
+        case Operator::kDivideOp:
+            if (left_type->isReal() || right_type->isReal()) {
+                p_bin_op.setInferredType(
+                    new PType(PType::PrimitiveTypeEnum::kRealType));
+                return;
+            }
+        case Operator::kModOp:
             p_bin_op.setInferredType(
-                new PType(PType::PrimitiveTypeEnum::kStringType));
+                new PType(PType::PrimitiveTypeEnum::kIntegerType));
             return;
-        }
-        [[fallthrough]];
-    case Operator::kMinusOp:
-    case Operator::kMultiplyOp:
-    case Operator::kDivideOp:
-        if (left_type->isReal() || right_type->isReal()) {
+        case Operator::kAndOp:
+        case Operator::kOrOp:
             p_bin_op.setInferredType(
-                new PType(PType::PrimitiveTypeEnum::kRealType));
+                new PType(PType::PrimitiveTypeEnum::kBoolType));
             return;
-        }
-    case Operator::kModOp:
-        p_bin_op.setInferredType(
-            new PType(PType::PrimitiveTypeEnum::kIntegerType));
-        return;
-    case Operator::kAndOp:
-    case Operator::kOrOp:
-        p_bin_op.setInferredType(
-            new PType(PType::PrimitiveTypeEnum::kBoolType));
-        return;
-    case Operator::kLessOp:
-    case Operator::kLessOrEqualOp:
-    case Operator::kEqualOp:
-    case Operator::kGreaterOp:
-    case Operator::kGreaterOrEqualOp:
-    case Operator::kNotEqualOp:
-        p_bin_op.setInferredType(
-            new PType(PType::PrimitiveTypeEnum::kBoolType));
-        return;
-    default:
-        assert(false && "unknown binary op or unary op");
+        case Operator::kLessOp:
+        case Operator::kLessOrEqualOp:
+        case Operator::kEqualOp:
+        case Operator::kGreaterOp:
+        case Operator::kGreaterOrEqualOp:
+        case Operator::kNotEqualOp:
+            p_bin_op.setInferredType(
+                new PType(PType::PrimitiveTypeEnum::kBoolType));
+            return;
+        default:
+            assert(false && "unknown binary op or unary op");
     }
 }
-} // namespace
+}  // namespace
 
 void SemanticAnalyzer::visit(BinaryOperatorNode &p_bin_op) {
     p_bin_op.visitChildNodes(*this);
@@ -271,18 +274,19 @@ void SemanticAnalyzer::visit(BinaryOperatorNode &p_bin_op) {
     if (p_bin_op.getLeftOperand().getInferredType()->isError() ||
         p_bin_op.getRightOperand().getInferredType()->isError()) {
         // Propagate the error type.
-        // NOTE: Although for operations other than arithmetic operations that has
-        // fixed result type, we can set the type to the expected one, this compiler
-        // handles errors with propagation.
-        p_bin_op.setInferredType(new PType(PType::PrimitiveTypeEnum::kErrorType));
+        // NOTE: Although for operations other than arithmetic operations that
+        // has fixed result type, we can set the type to the expected one, this
+        // compiler handles errors with propagation.
+        p_bin_op.setInferredType(
+            new PType(PType::PrimitiveTypeEnum::kErrorType));
         return;
     }
 
     if (!validateBinaryOperands(p_bin_op)) {
         printErrorAndSetType(InvalidBinaryOperandError(
-                               p_bin_op.getLocation(), p_bin_op.getOp(),
-                               p_bin_op.getLeftOperand().getInferredType(),
-                               p_bin_op.getRightOperand().getInferredType()),
+                                 p_bin_op.getLocation(), p_bin_op.getOp(),
+                                 p_bin_op.getLeftOperand().getInferredType(),
+                                 p_bin_op.getRightOperand().getInferredType()),
                              p_bin_op);
         return;
     }
@@ -294,18 +298,18 @@ namespace {
 bool validateUnaryOperand(const UnaryOperatorNode &p_un_op) {
     const auto *const operand_type = p_un_op.getOperand().getInferredType();
     switch (p_un_op.getOp()) {
-    case Operator::kNegOp:
-        if (operand_type->isInteger() || operand_type->isReal()) {
-            return true;
-        }
-        break;
-    case Operator::kNotOp:
-        if (operand_type->isBool()) {
-            return true;
-        }
-        break;
-    default:
-        assert(false && "unknown binary op or unary op");
+        case Operator::kNegOp:
+            if (operand_type->isInteger() || operand_type->isReal()) {
+                return true;
+            }
+            break;
+        case Operator::kNotOp:
+            if (operand_type->isBool()) {
+                return true;
+            }
+            break;
+        default:
+            assert(false && "unknown binary op or unary op");
     }
 
     return false;
@@ -313,34 +317,36 @@ bool validateUnaryOperand(const UnaryOperatorNode &p_un_op) {
 
 void setUnaryOpInferredType(UnaryOperatorNode &p_un_op) {
     switch (p_un_op.getOp()) {
-    case Operator::kNegOp:
-        p_un_op.setInferredType(new PType(
-            p_un_op.getOperand().getInferredType()->getPrimitiveType()));
-        return;
-    case Operator::kNotOp:
-        p_un_op.setInferredType(new PType(PType::PrimitiveTypeEnum::kBoolType));
-        return;
-    default:
-        assert(false && "unknown binary op or unary op");
+        case Operator::kNegOp:
+            p_un_op.setInferredType(new PType(
+                p_un_op.getOperand().getInferredType()->getPrimitiveType()));
+            return;
+        case Operator::kNotOp:
+            p_un_op.setInferredType(
+                new PType(PType::PrimitiveTypeEnum::kBoolType));
+            return;
+        default:
+            assert(false && "unknown binary op or unary op");
     }
 }
-} // namespace
+}  // namespace
 
 void SemanticAnalyzer::visit(UnaryOperatorNode &p_un_op) {
     p_un_op.visitChildNodes(*this);
 
     if (p_un_op.getOperand().getInferredType()->isError()) {
         // Propagate the error type.
-        // NOTE: Although for the not operator, we can set the type to boolean, this
-        // compiler handles errors with propagation.
-        p_un_op.setInferredType(new PType(PType::PrimitiveTypeEnum::kErrorType));
+        // NOTE: Although for the not operator, we can set the type to boolean,
+        // this compiler handles errors with propagation.
+        p_un_op.setInferredType(
+            new PType(PType::PrimitiveTypeEnum::kErrorType));
         return;
     }
 
     if (!validateUnaryOperand(p_un_op)) {
         printErrorAndSetType(
             InvalidUnaryOperandError(p_un_op.getLocation(), p_un_op.getOp(),
-                                    p_un_op.getOperand().getInferredType()),
+                                     p_un_op.getOperand().getInferredType()),
             p_un_op);
         return;
     }
@@ -349,8 +355,8 @@ void SemanticAnalyzer::visit(UnaryOperatorNode &p_un_op) {
 }
 
 bool SemanticAnalyzer::analyzeArgumentTypes(
-        const FunctionNode::DeclNodes &p_parameters,
-        const FunctionInvocationNode::ExprNodes &p_arguments) {
+    const FunctionNode::DeclNodes &p_parameters,
+    const FunctionInvocationNode::ExprNodes &p_arguments) {
     FunctionInvocationNode::ExprNodes::const_iterator argument_iter =
         p_arguments.begin();
 
@@ -379,9 +385,10 @@ bool SemanticAnalyzer::analyzeArgumentTypes(
 void SemanticAnalyzer::visit(FunctionInvocationNode &p_func_invocation) {
     p_func_invocation.visitChildNodes(*this);
 
-    const SymbolEntry *entry = m_symbol_manager.lookup(p_func_invocation.getName());
+    const SymbolEntry *entry =
+        m_symbol_manager.lookup(p_func_invocation.getName());
     if (entry && m_error_entry_set.find(const_cast<SymbolEntry *>(entry)) !=
-        m_error_entry_set.end()) {
+                     m_error_entry_set.end()) {
         p_func_invocation.setInferredType(
             new PType(PType::PrimitiveTypeEnum::kErrorType));
         return;
@@ -390,7 +397,7 @@ void SemanticAnalyzer::visit(FunctionInvocationNode &p_func_invocation) {
     if (!entry) {
         printErrorAndSetType(
             UndeclaredSymbolError(p_func_invocation.getLocation(),
-                                    p_func_invocation.getNameCString()),
+                                  p_func_invocation.getNameCString()),
             p_func_invocation);
         return;
     }
@@ -398,18 +405,18 @@ void SemanticAnalyzer::visit(FunctionInvocationNode &p_func_invocation) {
     if (entry->getKind() != SymbolEntry::KindEnum::kFunctionKind) {
         printErrorAndSetType(
             NonFunctionSymbolError(p_func_invocation.getLocation(),
-                                    p_func_invocation.getNameCString()),
+                                   p_func_invocation.getNameCString()),
             p_func_invocation);
         return;
     }
 
-    // NOTE: Although we don't have to propagate the error type when the following
-    // checks fail since we know the expected type, this compiler handles errors
-    // with propagation.
+    // NOTE: Although we don't have to propagate the error type when the
+    // following checks fail since we know the expected type, this compiler
+    // handles errors with propagation.
 
     // 3. The number of arguments must be the same as one of the parameters.
-    const auto& parameters = *entry->getAttribute().parameters();
-    const auto& arguments = p_func_invocation.getArguments();
+    const auto &parameters = *entry->getAttribute().parameters();
+    const auto &arguments = p_func_invocation.getArguments();
     if (arguments.size() != FunctionNode::getParametersNum(parameters)) {
         printErrorAndSetType(
             ArgumentNumberMismatchError(p_func_invocation.getLocation(),
@@ -433,9 +440,10 @@ void SemanticAnalyzer::visit(FunctionInvocationNode &p_func_invocation) {
 void SemanticAnalyzer::visit(VariableReferenceNode &p_variable_ref) {
     p_variable_ref.visitChildNodes(*this);
 
-    const SymbolEntry *entry = m_symbol_manager.lookup(p_variable_ref.getName());
+    const SymbolEntry *entry =
+        m_symbol_manager.lookup(p_variable_ref.getName());
     if (entry && m_error_entry_set.find(const_cast<SymbolEntry *>(entry)) !=
-        m_error_entry_set.end()) {
+                     m_error_entry_set.end()) {
         p_variable_ref.setInferredType(
             new PType(PType::PrimitiveTypeEnum::kErrorType));
         return;
@@ -445,7 +453,7 @@ void SemanticAnalyzer::visit(VariableReferenceNode &p_variable_ref) {
     if (!entry) {
         printErrorAndSetType(
             UndeclaredSymbolError(p_variable_ref.getLocation(),
-                                    p_variable_ref.getNameCString()),
+                                  p_variable_ref.getNameCString()),
             p_variable_ref);
         return;
     }
@@ -457,7 +465,7 @@ void SemanticAnalyzer::visit(VariableReferenceNode &p_variable_ref) {
         entry->getKind() != SymbolEntry::KindEnum::kConstantKind) {
         printErrorAndSetType(
             NonVariableSymbolError(p_variable_ref.getLocation(),
-                                    p_variable_ref.getNameCString()),
+                                   p_variable_ref.getNameCString()),
             p_variable_ref);
         return;
     }
@@ -471,7 +479,9 @@ void SemanticAnalyzer::visit(VariableReferenceNode &p_variable_ref) {
             return;
         }
         if (!index->getInferredType()->isInteger()) {
-            printErrorAndSetType(NonIntegerArrayIndexError(index->getLocation()), p_variable_ref);
+            printErrorAndSetType(
+                NonIntegerArrayIndexError(index->getLocation()),
+                p_variable_ref);
             return;
         }
     }
@@ -491,8 +501,7 @@ void SemanticAnalyzer::visit(VariableReferenceNode &p_variable_ref) {
 }
 
 bool SemanticAnalyzer::analyzeAssignmentLvalue(
-        const AssignmentNode &p_assignment,
-        const SymbolManager &p_symbol_manager) {
+    const AssignmentNode &p_assignment, const SymbolManager &p_symbol_manager) {
     const auto &lvalue = p_assignment.getLvalue();
     const auto *const lvalue_type = lvalue.getInferredType();
 
@@ -506,7 +515,8 @@ bool SemanticAnalyzer::analyzeAssignmentLvalue(
     const auto *const entry = p_symbol_manager.lookup(lvalue.getName());
     // 2. The variable reference cannot be a reference to a constant variable.
     if (entry->getKind() == SymbolEntry::KindEnum::kConstantKind) {
-        printError(AssignToConstantError(lvalue.getLocation(), lvalue.getNameCString()));
+        printError(AssignToConstantError(lvalue.getLocation(),
+                                         lvalue.getNameCString()));
         return false;
     }
     // 3. The variable reference cannot be a reference to a loop
@@ -522,7 +532,7 @@ bool SemanticAnalyzer::analyzeAssignmentLvalue(
 }
 
 bool SemanticAnalyzer::analyzeAssignmentExpr(
-        const AssignmentNode &p_assignment) {
+    const AssignmentNode &p_assignment) {
     const auto &expr = p_assignment.getExpr();
     const auto *const expr_type = expr.getInferredType();
 
@@ -533,11 +543,10 @@ bool SemanticAnalyzer::analyzeAssignmentExpr(
     }
     // 5. The type of the variable reference (lvalue) must be the same as the
     // one of the expression after appropriate type coercion.
-    const auto *const lvalue_type =
-        p_assignment.getLvalue().getInferredType();
+    const auto *const lvalue_type = p_assignment.getLvalue().getInferredType();
     if (!expr_type->canCoerceTo(lvalue_type)) {
-        printError(IncompatibleAssignmentError(
-            p_assignment.getLocation(), lvalue_type, expr_type));
+        printError(IncompatibleAssignmentError(p_assignment.getLocation(),
+                                               lvalue_type, expr_type));
         return false;
     }
 
@@ -547,18 +556,18 @@ bool SemanticAnalyzer::analyzeAssignmentExpr(
 void SemanticAnalyzer::visit(AssignmentNode &p_assignment) {
     p_assignment.visitChildNodes(*this);
 
-    // Skip the rest of semantic checks if there are any errors in the node of the
-    // variable reference.
+    // Skip the rest of semantic checks if there are any errors in the node of
+    // the variable reference.
     if (p_assignment.getLvalue().getInferredType()->isError()) {
         return;
     }
-    // Skip the rest of semantic checks if there are any errors in the node of the
-    // variable reference.
+    // Skip the rest of semantic checks if there are any errors in the node of
+    // the variable reference.
     if (!analyzeAssignmentLvalue(p_assignment, m_symbol_manager)) {
         return;
     }
-    // Skip the rest of semantic checks if there are any errors in the node of the
-    // expression.
+    // Skip the rest of semantic checks if there are any errors in the node of
+    // the expression.
     if (p_assignment.getExpr().getInferredType()->isError()) {
         return;
     }
@@ -581,8 +590,9 @@ void SemanticAnalyzer::visit(ReadNode &p_read) {
 
     const auto *const entry =
         m_symbol_manager.lookup(p_read.getTarget().getName());
-    assert(entry && "Shouldn't reach here. This should be caught during the"
-                    "visits of child nodes");
+    assert(entry &&
+           "Shouldn't reach here. This should be caught during the"
+           "visits of child nodes");
     if (m_error_entry_set.find(const_cast<SymbolEntry *>(entry)) !=
         m_error_entry_set.end()) {
         return;
@@ -591,7 +601,8 @@ void SemanticAnalyzer::visit(ReadNode &p_read) {
     // loop_var.
     if (entry->getKind() == SymbolEntry::KindEnum::kConstantKind ||
         entry->getKind() == SymbolEntry::KindEnum::kLoopVarKind) {
-        printError(ReadToConstantOrLoopVarError(p_read.getTarget().getLocation()));
+        printError(
+            ReadToConstantOrLoopVarError(p_read.getTarget().getLocation()));
         return;
     }
 }
@@ -619,7 +630,8 @@ void SemanticAnalyzer::visit(WhileNode &p_while) {
     // 1. The type of the result of the expression (condition) must be boolean
     // type.
     if (!p_while.getCondition().getInferredType()->isBool()) {
-        printError(NonBooleanConditionError(p_while.getCondition().getLocation()));
+        printError(
+            NonBooleanConditionError(p_while.getCondition().getLocation()));
         return;
     }
 }
@@ -651,30 +663,30 @@ void SemanticAnalyzer::visit(ReturnNode &p_return) {
         return;
     }
 
-    // Skip the rest of semantic checks if there are any errors in the node of the
-    // expression (return value).
+    // Skip the rest of semantic checks if there are any errors in the node of
+    // the expression (return value).
     if (p_return.getReturnValue().getInferredType()->isError()) {
         return;
     }
-    const auto *const retval_type =
-        p_return.getReturnValue().getInferredType();
-    // 2. The type of the result of the expression (return value) must be the same
-    // type as the return type of current function after appropriate type coercion.
+    const auto *const retval_type = p_return.getReturnValue().getInferredType();
+    // 2. The type of the result of the expression (return value) must be the
+    // same type as the return type of current function after appropriate type
+    // coercion.
     if (!retval_type->canCoerceTo(expected_return_type)) {
-        m_error_printer.print(IncompatibleReturnTypeError(
-            p_return.getReturnValue().getLocation(), expected_return_type,
-            retval_type));
+        m_error_printer.print(
+            IncompatibleReturnTypeError(p_return.getReturnValue().getLocation(),
+                                        expected_return_type, retval_type));
         return;
     }
 }
 
-void SemanticAnalyzer::printError(const Error& p_error) {
+void SemanticAnalyzer::printError(const Error &p_error) {
     m_error_printer.print(p_error);
     m_has_error = true;
 }
 
-void SemanticAnalyzer::printErrorAndSetType(const Error& p_error,
-                                            ExpressionNode& p_expr) {
+void SemanticAnalyzer::printErrorAndSetType(const Error &p_error,
+                                            ExpressionNode &p_expr) {
     printError(p_error);
     p_expr.setInferredType(new PType(PType::PrimitiveTypeEnum::kErrorType));
 }

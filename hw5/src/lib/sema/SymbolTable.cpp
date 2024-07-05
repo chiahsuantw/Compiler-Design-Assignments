@@ -10,8 +10,9 @@
 // ===========================================
 const Constant *Attribute::constant() const {
     if (m_type != Tag::kConstantValue) {
-        assert(false && "Try to extract constant from an attribute object that "
-                        "is not for constant");
+        assert(false &&
+               "Try to extract constant from an attribute object that "
+               "is not for constant");
         return nullptr;
     }
     return m_constant_value_ptr;
@@ -19,8 +20,9 @@ const Constant *Attribute::constant() const {
 
 const FunctionNode::DeclNodes *Attribute::parameters() const {
     if (m_type != Tag::kParameterDeclNodes) {
-        assert(false && "Try to extract parameters from an attribute object"
-                        "that is not for parameters");
+        assert(false &&
+               "Try to extract parameters from an attribute object"
+               "that is not for parameters");
         return nullptr;
     }
     return m_parameters_ptr;
@@ -33,20 +35,19 @@ SymbolEntry *SymbolTable::addSymbol(const std::string &p_name,
                                     const SymbolEntry::KindEnum p_kind,
                                     const size_t p_level,
                                     const PType *const p_p_type,
-                                    const Constant *const p_constant) {
-    m_entries.emplace_back(
-        new SymbolEntry(p_name, p_kind, p_level, p_p_type, p_constant));
+                                    const Constant *const p_constant,
+                                    const int p_offset) {
+    m_entries.emplace_back(new SymbolEntry(p_name, p_kind, p_level, p_p_type,
+                                           p_constant, p_offset));
     return m_entries.back().get();
 }
 
-SymbolEntry *
-SymbolTable::addSymbol(const std::string &p_name,
-                       const SymbolEntry::KindEnum p_kind,
-                       const size_t p_level,
-                       const PType *const p_p_type,
-                       const FunctionNode::DeclNodes *const p_parameters) {
-    m_entries.emplace_back(
-        new SymbolEntry(p_name, p_kind, p_level, p_p_type, p_parameters));
+SymbolEntry *SymbolTable::addSymbol(
+    const std::string &p_name, const SymbolEntry::KindEnum p_kind,
+    const size_t p_level, const PType *const p_p_type,
+    const FunctionNode::DeclNodes *const p_parameters, const int p_offset) {
+    m_entries.emplace_back(new SymbolEntry(p_name, p_kind, p_level, p_p_type,
+                                           p_parameters, p_offset));
     return m_entries.back().get();
 }
 
@@ -60,12 +61,14 @@ const SymbolEntry *SymbolTable::lookup(const std::string &p_name) const {
 }
 
 void SymbolTable::dump() const {
-    std::printf("=========================================================="
-                "====================================================\n");
+    std::printf(
+        "=========================================================="
+        "====================================================\n");
     std::printf("%-33s%-11s%-11s%-17s%-11s\n", "Name", "Kind", "Level", "Type",
                 "Attribute");
-    std::printf("----------------------------------------------------------"
-                "----------------------------------------------------\n");
+    std::printf(
+        "----------------------------------------------------------"
+        "----------------------------------------------------\n");
 
     std::string type_string;
     auto construct_attr_string = [&type_string](const auto &p_entry_ptr) {
@@ -87,8 +90,9 @@ void SymbolTable::dump() const {
     };
 
     auto dump_entry = [&construct_attr_string](const auto &p_entry_ptr) {
-        static const char *kKindStrings[] = {"program",  "function", "parameter",
-                                             "variable", "loop_var", "constant"};
+        static const char *kKindStrings[] = {"program",   "function",
+                                             "parameter", "variable",
+                                             "loop_var",  "constant"};
 
         std::printf("%-33s", p_entry_ptr->getNameCString());
         std::printf("%-11s",
@@ -101,8 +105,9 @@ void SymbolTable::dump() const {
 
     for_each(m_entries.begin(), m_entries.end(), dump_entry);
 
-    std::printf("----------------------------------------------------------"
-                "----------------------------------------------------\n");
+    std::printf(
+        "----------------------------------------------------------"
+        "----------------------------------------------------\n");
 }
 
 // ===========================================
@@ -117,7 +122,8 @@ void SymbolManager::pushScope(SymbolManager::Table p_table) {
 }
 
 SymbolManager::Table SymbolManager::popScope() {
-    assert(getCurrentTable() && "Shouldn't popScope() without pushing any scope");
+    assert(getCurrentTable() &&
+           "Shouldn't popScope() without pushing any scope");
 
     if (m_opt_dmp) {
         getCurrentTable()->dump();
@@ -137,9 +143,11 @@ SymbolEntry *SymbolManager::addSymbol(const std::string &p_name,
         return nullptr;
     }
 
-    auto& current_table = m_tables.back();
+    auto &current_table = m_tables.back();
     auto *entry = current_table->addSymbol(
-        p_name, p_kind, getCurrentLevel(), p_p_type, p_attribute);
+        p_name, p_kind, getCurrentLevel(), p_p_type, p_attribute,
+        (getCurrentLevel() > 0) ? m_global_offset : 0);
+    if (getCurrentLevel() > 0) m_global_offset -= 4;
     return entry;
 }
 

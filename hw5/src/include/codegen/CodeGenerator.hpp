@@ -1,32 +1,33 @@
 #ifndef CODEGEN_CODE_GENERATOR_H
 #define CODEGEN_CODE_GENERATOR_H
 
-#include "sema/SemanticAnalyzer.hpp"
-#include "sema/SymbolTable.hpp"
-#include "visitor/AstNodeVisitor.hpp"
-
 #include <cstdio>
 #include <memory>
 #include <string>
 #include <unordered_map>
 
+#include "sema/SemanticAnalyzer.hpp"
+#include "sema/SymbolTable.hpp"
+#include "visitor/AstNodeVisitor.hpp"
+
 class CodeGenerator final : public AstNodeVisitor {
-  private:
+   private:
     SymbolManager m_symbol_manager;
     std::string m_source_file_path;
-    std::unordered_map<SemanticAnalyzer::AstNodeAddr,
-                             SymbolManager::Table>
+    std::unordered_map<SemanticAnalyzer::AstNodeAddr, SymbolManager::Table>
         m_symbol_table_of_scoping_nodes;
-    /// NOTE: `FILE` cannot be simply deleted by `delete`, so we need a custom deleter.
+    /// NOTE: `FILE` cannot be simply deleted by `delete`, so we need a custom
+    /// deleter.
     std::unique_ptr<FILE, decltype(&fclose)> m_output_file{nullptr, &fclose};
+    bool isAssignment = false;
+    void setIsAssignment(bool p_value) { isAssignment = p_value; }
 
-  public:
+   public:
     ~CodeGenerator() = default;
-    CodeGenerator(const std::string &source_file_name,
-                  const std::string &save_path,
-                  std::unordered_map<SemanticAnalyzer::AstNodeAddr,
-                                           SymbolManager::Table>
-                      &&p_symbol_table_of_scoping_nodes);
+    CodeGenerator(
+        const std::string &source_file_name, const std::string &save_path,
+        std::unordered_map<SemanticAnalyzer::AstNodeAddr, SymbolManager::Table>
+            &&p_symbol_table_of_scoping_nodes);
 
     void visit(ProgramNode &p_program) override;
     void visit(DeclNode &p_decl) override;
