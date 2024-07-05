@@ -1,12 +1,8 @@
 #include "AST/for.hpp"
 
-// TODO
-ForNode::ForNode(const uint32_t line, const uint32_t col)
-    : AstNode{line, col} {}
-
-// TODO: You may use code snippets in AstDumper.cpp
-void ForNode::print() {}
-
-// void ForNode::visitChildNodes(AstNodeVisitor &p_visitor) {
-//     // TODO
-// }
+void ForNode::visitChildNodes(AstNodeVisitor &visitor) {
+  decl->accept(visitor);
+  asgmt->accept(visitor);
+  expr->accept(visitor);
+  body->accept(visitor);
+}

@@ -1,19 +1,39 @@
 #ifndef __AST_FUNCTION_NODE_H
 #define __AST_FUNCTION_NODE_H
 
+#include "AST/CompoundStatement.hpp"
 #include "AST/ast.hpp"
+#include "AST/decl.hpp"
+#include "AST/type.hpp"
+#include "visitor/AstNodeVisitor.hpp"
+
+#include <memory>
+#include <string>
+#include <vector>
 
 class FunctionNode : public AstNode {
-  public:
-    FunctionNode(const uint32_t line, const uint32_t col
-                 /* TODO: name, declarations, return type,
-                  *       compound statement (optional) */);
-    ~FunctionNode() = default;
+  using DeclarationNodes = std::vector<std::unique_ptr<DeclNode>>;
 
-    void print() override;
+public:
+  FunctionNode(uint32_t line, uint32_t col, char *name,
+               DeclarationNodes &declNodes, Type *type,
+               CompoundStatementNode *body)
+      : AstNode{line, col}, name(name), declNodes(std::move(declNodes)),
+        type(type), body(body){};
 
-  private:
-    // TODO: name, declarations, return type, compound statement
+  const char *getNameCString() const { return name.c_str(); };
+  const char *getPrototypeCString() const;
+
+  void accept(AstNodeVisitor &visitor) override { visitor.visit(*this); };
+  void visitChildNodes(AstNodeVisitor &visitor) override;
+
+private:
+  std::string name;
+  DeclarationNodes declNodes;
+  std::unique_ptr<Type> type;
+  std::unique_ptr<CompoundStatementNode> body;
+
+  mutable std::string prototypeString;
 };
 
 #endif

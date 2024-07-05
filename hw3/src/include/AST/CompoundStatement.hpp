@@ -2,17 +2,28 @@
 #define __AST_COMPOUND_STATEMENT_NODE_H
 
 #include "AST/ast.hpp"
+#include "AST/decl.hpp"
+#include "visitor/AstNodeVisitor.hpp"
+
+#include <memory>
+#include <vector>
 
 class CompoundStatementNode : public AstNode {
-  public:
-    CompoundStatementNode(const uint32_t line, const uint32_t col
-                          /* TODO: declarations, statements */);
-    ~CompoundStatementNode() = default;
+  using DeclarationNodes = std::vector<std::unique_ptr<DeclNode>>;
+  using StatementNodes = std::vector<std::unique_ptr<AstNode>>;
 
-    void print() override;
+public:
+  CompoundStatementNode(uint32_t line, uint32_t col,
+                        DeclarationNodes &declNodes, StatementNodes &stmtNodes)
+      : AstNode{line, col}, declNodes{std::move(declNodes)},
+        stmtNodes{std::move(stmtNodes)} {};
 
-  private:
-    // TODO: declarations, statements
+  void accept(AstNodeVisitor &visitor) override { visitor.visit(*this); };
+  void visitChildNodes(AstNodeVisitor &visitor) override;
+
+private:
+  DeclarationNodes declNodes;
+  StatementNodes stmtNodes;
 };
 
 #endif

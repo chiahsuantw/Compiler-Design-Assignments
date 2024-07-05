@@ -83,8 +83,8 @@ nonzero_float ({nonzero_integer}\.(0|[0-9]*[1-9]))|(0\.([0-9]*[1-9]))
 "real"    { LIST_TOKEN("KWreal"); return TOK_REAL; }
 "string"  { LIST_TOKEN("KWstring"); return TOK_STRING; }
 
-"true"    { LIST_TOKEN("KWtrue"); return TOK_TRUE; }
-"false"   { LIST_TOKEN("KWfalse"); return TOK_FALSE; }
+"true"    { LIST_TOKEN("KWtrue"); yylval.boolean = true; return TOK_TRUE; }
+"false"   { LIST_TOKEN("KWfalse"); yylval.boolean = false; return TOK_FALSE; }
 
 "def"     { LIST_TOKEN("KWdef"); return TOK_DEF; }
 "return"  { LIST_TOKEN("KWreturn"); return TOK_RETURN; }
@@ -113,14 +113,14 @@ nonzero_float ({nonzero_integer}\.(0|[0-9]*[1-9]))|(0\.([0-9]*[1-9]))
 }
 
     /* Integer (decimal/octal) */
-{integer} { LIST_LITERAL("integer", yytext); return TOK_INT_LITERAL; }
-0[0-7]+   { LIST_LITERAL("oct_integer", yytext); return TOK_INT_LITERAL; }
+{integer} { LIST_LITERAL("integer", yytext); yylval.integer = strtol(yytext, NULL, 10); return TOK_INT_LITERAL; }
+0[0-7]+   { LIST_LITERAL("oct_integer", yytext); yylval.integer = strtol(yytext, NULL, 8); return TOK_INT_LITERAL; }
 
     /* Floating-Point */
-{float} { LIST_LITERAL("float", yytext); return TOK_REAL_LITERAL; }
+{float} { LIST_LITERAL("float", yytext); yylval.real = strtof(yytext, NULL); return TOK_REAL_LITERAL; }
 
     /* Scientific Notation [Ee][+-]?[0-9]+ */
-({nonzero_integer}|{nonzero_float})[Ee][+-]?({integer}) { LIST_LITERAL("scientific", yytext); return TOK_REAL_LITERAL; }
+({nonzero_integer}|{nonzero_float})[Ee][+-]?({integer}) { LIST_LITERAL("scientific", yytext); yylval.real = strtod(yytext, NULL); return TOK_REAL_LITERAL; }
 
     /* String */
 \"([^"\n]|\"\")*\" {
@@ -145,6 +145,7 @@ nonzero_float ({nonzero_integer}\.(0|[0-9]*[1-9]))|(0\.([0-9]*[1-9]))
     }
     *str_ptr = '\0';
     LIST_LITERAL("string", string_literal);
+    yylval.string = strdup(string_literal);
     return TOK_STRING_LITERAL;
 }
 

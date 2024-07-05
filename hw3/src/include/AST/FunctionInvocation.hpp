@@ -2,19 +2,28 @@
 #define __AST_FUNCTION_INVOCATION_NODE_H
 
 #include "AST/expression.hpp"
+#include "visitor/AstNodeVisitor.hpp"
+
+#include <memory>
+#include <string>
+#include <vector>
 
 class FunctionInvocationNode : public ExpressionNode {
-  public:
-    FunctionInvocationNode(const uint32_t line, const uint32_t col
-                           /* TODO: function name, expressions */);
-    ~FunctionInvocationNode() = default;
+  using ExpressionNodes = std::vector<std::unique_ptr<ExpressionNode>>;
 
-    const char *getNameCString() const;
+public:
+  FunctionInvocationNode(uint32_t line, uint32_t col, char *name,
+                         ExpressionNodes &exprs)
+      : ExpressionNode{line, col}, name(name), exprs(std::move(exprs)){};
 
-    void print() override;
+  const char *getNameCString() const { return name.c_str(); }
 
-  private:
-    // TODO: function name, expressions
+  void accept(AstNodeVisitor &visitor) override { visitor.visit(*this); };
+  void visitChildNodes(AstNodeVisitor &visitor) override;
+
+private:
+  std::string name;
+  ExpressionNodes exprs;
 };
 
 #endif
